@@ -14,7 +14,12 @@ services:
       - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
       - DOCKER_INFLUXDB_INIT_ORG=lookout
       - DOCKER_INFLUXDB_INIT_BUCKET=mra_events
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=your-secret-token
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=your-super-secret-admin-token
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   grafana:
     image: grafana/grafana:latest
@@ -22,12 +27,17 @@ services:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=adminpassword
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=your-super-secret-admin-token
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
 
   mra-ingestor:
     build: 
@@ -35,13 +45,14 @@ services:
       dockerfile: Dockerfile
     environment:
       - INFLUX_URL=http://influxdb:8086
-      - INFLUX_TOKEN=your-secret-token
+      - INFLUX_TOKEN=your-super-secret-admin-token
       - INFLUX_ORG=lookout
       - INFLUX_BUCKET=mra_events
       - MRA_API_KEY=${MRA_API_KEY}
       - ENTERPRISE_NAME=${ENTERPRISE_NAME}
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
 
 volumes:
   influxdb-data:
