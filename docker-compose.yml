@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=lookout
+      - DOCKER_INFLUXDB_INIT_BUCKET=mra_events
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=your-secret-token
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=adminpassword
+    depends_on:
+      - influxdb
+
+  mra-ingestor:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=your-secret-token
+      - INFLUX_ORG=lookout
+      - INFLUX_BUCKET=mra_events
+      - MRA_API_KEY=${MRA_API_KEY}
+      - ENTERPRISE_NAME=${ENTERPRISE_NAME}
+    depends_on:
+      - influxdb
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:

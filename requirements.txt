@@ -1,0 +1,2 @@
+lookout-mra-client==2.6.3
+influxdb-client==1.36.1
