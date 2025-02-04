@@ -1,14 +1,9 @@
 FROM ubuntu:24.04
-
 WORKDIR /app
-
-# Set noninteractive installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python and required system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    python3.9 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
     python3-pip \
     python3-dev \
     gcc \
